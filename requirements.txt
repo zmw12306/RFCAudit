@@ -1,0 +1,6 @@
+autogen_agentchat==0.2.39
+boto3==1.38.24
+botocore==1.38.24
+pyautogen==0.2.35
+tree_sitter==0.24.0
+tree_sitter_c==0.23.1
