@@ -17,6 +17,10 @@ source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Create new folders for RFC and summary
+mkdir RFC
+mkdir summary
 ```
 
 ### 2. Configuration
