@@ -97,8 +97,10 @@ RFCAudit/
 ├── README.md                # This file
 ├── config.yaml              # Configuration file
 ├── requirements.txt         # Python dependencies
-├── summarizer.py            # Code summarization tool
-├── checker.py               # Inconsistency detection tool
+├── repo.py                  # Code summarization tool
+├── diff.py                  # Inconsistency detection tool
+├── init.py                  # Initial configuration
+├── query_repo_recursive.py  # Tree-sitter based analysis tool
 ├── RFC/                     # Example RFCs 
 ├── summary/                 # Sample code analysis outputs
 ```
