@@ -48,8 +48,7 @@ def get_function_summaries(source_code, tree: tree_sitter.Tree):
             for sub_node in dec_node.children:
                 if sub_node.type in {"qualified_identifier", "scoped_identifier", "identifier"}:
                     function_name = source_code[sub_node.start_byte:sub_node.end_byte].decode("utf8")
-                    # summary = generate_function_summary(extract_text(func_node))
-                    summary = ""
+                    summary = generate_function_summary(extract_text(func_node))
                     function_map[function_name] = {
                         "start_byte": func_node.start_byte,
                         "end_byte": func_node.end_byte,
@@ -63,8 +62,7 @@ def get_function_summaries(source_code, tree: tree_sitter.Tree):
                         if class_name:
                             class_name = source_code[class_name.start_byte:class_name.end_byte].decode("utf8")
                             function_name = f"{class_name}::{function_name}"
-                    # summary = generate_function_summary(extract_text(func_node))
-                    summary = ""
+                    summary = generate_function_summary(extract_text(func_node))
                     function_map[function_name] = {
                         "start_byte": func_node.start_byte,
                         "end_byte": func_node.end_byte,
@@ -77,8 +75,7 @@ def get_function_summaries(source_code, tree: tree_sitter.Tree):
         for sub_node in func_node.children:
             if sub_node.type == "identifier":
                 function_name = source_code[sub_node.start_byte:sub_node.end_byte].decode("utf8")
-                # summary = generate_function_summary(extract_text(func_node))
-                summary = ""
+                summary = generate_function_summary(extract_text(func_node))
                 function_map[function_name] = {
                         "start_byte": func_node.start_byte,
                         "end_byte": func_node.end_byte,
