@@ -1,31 +1,103 @@
-# RFCScan: An LLM Agent for Functional Bug Detection in Network Protocols
+# RFCAudit
 
-RFCScan detects functional inconsistencies between network protocol implementations and their RFC documents using LLM-guided analysis.
+**RFCAudit** is an AI-powered tool that automatically detects misalignments between source code implementations and their corresponding RFC or specification documentation. Using hierarchical semantic analysis and retrieval-augmented generation, RFCAudit helps ensure code compliance with protocol specifications.
 
----
-## ⚙️ Configuration
+## 🚀 Quick Start
 
-Before running, make sure to:
-
-- Update the `config` in `init.py` and `diff.py` with your LLM model configures. The current code shows an example of using bedrock Claude 3.5.
-- In `diff.py` and `global_vars.py`, set the correct paths to:
-  - The RFC document
-  - The protocol implementation
-
-
----
-## 🚀 Phase 1: Code Semantic Indexing
-
-Generate a semantic index of the codebase to enable context-aware retrieval.
+### 1. Installation
 
 ```bash
-python repo.py /path/to/repo
+# Clone the repository
+git clone xxx
+cd RFCAudit
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-## 🔍 Phase 2: Retrieval-Guided Detection
+### 2. Configuration
 
-Run the detection pipeline to identify RFC violations in the implementation.
+Create and configure `config.yaml` with your LLM API settings and project paths:
+
+```yaml
+project:
+  protocol: "protocol_name"                                    # Protocol name for reporting
+  project_path: "/path/to/your/project/"              # Root path of your project
+  prefer_path: "/path/to/your/project/src/"           # Source folder to analyze
+  rfc_input: "RFC/docs.txt"                           # Path to RFC documentation
+  rfc_cleaned_output: "RFC/cleaned_docs.txt"          # Cleaned RFC output location
+  summary_json: "summary/summary.json"                # Code summary output
+  log_or_not: false                                   # Enable/disable logging
+  log_file: "log.txt"                                 # Log file location
+
+llm_config:
+  model_name: "LLM model name"                        # LLM model name
+  OPENAI_API_KEY: "Your API Key"                      # OPENAI API Key
+  temperature: 0.0
+  retry_min: 5                                        # Minimum retry delay (seconds)
+  retry_max: 60                                       # Maximum retry delay (seconds)
+  max_retries: 30                                     # Maximum retry attempts
+```
+
+
+
+## 📖 Usage
+
+RFCAudit operates in two phases:
+
+### Phase 1: Code Summarization
+
+Generate a hierarchical semantic summary of your codebase:
+
+```bash
+python repo.py
+```
+
+This will:
+- Parse your C source code using Tree-sitter
+- Create hierarchical summaries at function, file, and module levels
+- Save results to the specified `summary_json` file
+
+### Phase 2: Inconsistency Detection
+
+Analyze the code against RFC documentation:
 
 ```bash
 python diff.py
 ```
+
+This will:
+- Process and clean the RFC documentation
+- Compare code summaries against RFC specifications
+- Generate a detailed inconsistency report in `inconsistencies_{protocol}.json`
+
+## 📊 Output Files
+
+| File | Description |
+|------|-------------|
+| `summary/{protocol}_summary.json` | Hierarchical code summarization results |
+| `inconsistencies_{protocol}.json` | Detected misalignments between code and RFC |
+| `RFC/cleaned_{protocol}.txt` | Processed RFC documentation |
+| `log.txt` | Execution logs (if enabled) |
+
+
+
+## 🏗️ Project Structure
+
+```
+RFCAudit/
+├── README.md                 # This file
+├── config.yaml              # Configuration file
+├── requirements.txt          # Python dependencies
+├── summarizer.py            # Code summarization tool
+├── checker.py               # Inconsistency detection tool
+├── RFC/                     # Example RFCs 
+├── summary/                 # Sample code analysis outputs
+```
+
+
+

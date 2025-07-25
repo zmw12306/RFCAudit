@@ -2,23 +2,20 @@ import re
 from autogen import ConversableAgent
 import autogen
 import json
-import tree_sitter_c as tsc
 from query_repo_recursive import *
-import tree_sitter
-from tree_sitter import Language, Parser
-import global_vars
-from query_repo_recursive import *
-from typing import List, Tuple, Dict, Set, Optional
 from init import *
+import re
+import json
 
-C_LANGUAGE = Language(tsc.language())
-parser = Parser(C_LANGUAGE)
-
-with open("summary.json") as f:  
-    code_json = json.load(f)
-
-config_list = [] # Todo: fill in the config_list with your LLM configurations
-
+def write_inconsistency(inconsistency_summary: str, proposed_fix: str):
+    global json_entries
+    if not json_entries:
+        print("⚠️ No entry to update!")
+        return
+    json_entries[-1]["inconsistency summary"] = inconsistency_summary
+    json_entries[-1]["proposed fix"] = proposed_fix
+    with open(JSON_FILE, "w", encoding="utf-8") as f_json:
+        json.dump(json_entries, f_json, indent=2)
 
 def clean_text(filename):
     with open(filename, 'r', encoding='utf-8') as file:
@@ -51,7 +48,6 @@ def handle_doc(readfile, writefile):
 
     for i, match in enumerate(headers):
         start_index = match.end()
-        # Adjust to find the start of the next section considering document structure
         end_index = headers[i + 1].start() if (i + 1) < len(headers) else len(document_text)
         
         # Extract section number and title, and trim content accurately
@@ -88,9 +84,8 @@ Here is what you see in the current directory ({current_path}):
 Which entries are most relevant to this section?
 Return a comma-separated list of file or folder names enclosed in square brackets, e.g., ["file1.c", "subdir"]. Say TERMINATE if nothing matches.
 """
-   
+    print(f"Context for LLM:\n{context}\n")
     response = askLLM(context).strip()
-    print(f"LLM Response:\n{response}\n")
     if "TERMINATE"in response.upper():
         return []
     # Use regex to extract all quoted names inside the first bracketed list
@@ -138,26 +133,44 @@ Your task is to identify which functions are most likely to implement the behavi
 --- Functions ---
 {function_text}
 
-Return a list of function names enclosed in square brackets, like ["func1", "func2"].
+Return a list of function names enclosed in square brackets, like ["func1", "func2", "class1::func3"].
 """
+    print(f"Context for LLM:\n{function_text}\n")
     max_retries = 3
     for _ in range(max_retries):
         try:
             response = askLLM(prompt).strip()
-
-            match = re.search(r"\[(.*?)\]", response)
+            match = re.search(r"\[(.*?)\]", response, re.DOTALL)
             if not match:
                 print("⚠️ LLM response did not contain a valid list of function names.")
                 continue
-
+           
             inner_content = match.group(1)
+
+            # Extract all quoted strings from the bracketed list
             names = re.findall(r'"([^"]+)"|\'([^\']+)\'', inner_content)
-            return [n1 or n2 for n1, n2 in names]
+            selected_funcs = [n1 or n2 for n1, n2 in names]
+
+            print(f"📌 Selected functions: {selected_funcs}")
+            return selected_funcs
         except Exception as e:
             continue
 
 # === Agent configuration ===
+@retry(wait=wait_random_exponential(min=retry_min, max=retry_max), stop=stop_after_attempt(max_retries))
 def agent_config(function, docsec):
+    global json_entries
+    json_entries.append({
+        "RFC chunk ID": docsec,
+        "original context": function,
+        "additional context": "",
+        "inconsistency summary": "",
+        "proposed fix": ""
+    })
+    # Write initial version of JSON after adding the entry
+    with open(JSON_FILE, "w", encoding="utf-8") as f_json:
+        json.dump(json_entries, f_json, indent=2)
+
     def get_task_prompt(function, docsec):
         task_prompt = f"Find any inconsistencies between the code and its RFC specification. Only report **explicit violations** of documented mandatory behavior.\n The implementation:\n {function}n RFC document: {docsec}"
         return task_prompt
@@ -256,6 +269,9 @@ Ensure that only **true, explicitly documented** inconsistencies are documented 
 
     # Register the tool function with the user proxy agent.
     executor.register_for_execution(name="query_caller")(query_caller)
+
+    critic.register_for_llm(name="write_inconsistency", description="Write inconsistency to CSV")(write_inconsistency)
+    executor.register_for_execution(name="write_inconsistency")(write_inconsistency)
     
     def state_transition(last_speaker, groupchat):
         messages = groupchat.messages
@@ -295,8 +311,18 @@ Ensure that only **true, explicitly documented** inconsistencies are documented 
         speaker_selection_method=state_transition
     )
 
-    manager = autogen.GroupChatManager(groupchat=groupchat, llm_config={"config_list": config_list,},is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"],)
+    manager = autogen.GroupChatManager(groupchat=groupchat, llm_config={"config_list": config_list,},is_termination_msg=lambda msg: msg.get("content") is not None and "TERMINATE" in msg["content"] and msg["name"] == "Critic")
     initializer.initiate_chat(manager, message = get_task_prompt(function, docsec))
+
+    # After chat → parse groupchat.messages to fill log_entry fields
+    for msg in groupchat.messages:
+        tool_responses = msg.get('tool_responses', [])
+        if tool_responses:
+            for resp in tool_responses:
+                json_entries[-1]["additional context"] += resp['content'] + '\n\n'
+    with open(JSON_FILE, "w", encoding="utf-8") as f_json:
+        json.dump(json_entries, f_json, indent=2)
+    return
 
 
 # === Main function ===
@@ -304,19 +330,26 @@ Ensure that only **true, explicitly documented** inconsistencies are documented 
 # based on the content of the document.
 # It uses the Tree-sitter library to parse the code and identify functions.
 # The function also interacts with an LLM to refine the selection of functions.
-def diff(protocol, read_file_name, write_file_name, repo_path):
+if __name__ == "__main__":
+    json_entries = []
+
+    with open(JSON_FILE, "w", encoding="utf-8") as f_json:
+        json.dump(json_entries, f_json, indent=2)
+
+    with open(summary_json) as f:  
+        code_json = json.load(f)
+        
     sections = handle_doc(read_file_name, write_file_name)
-    global_vars.project_path = repo_path
+    
     print("Start scanning project...")
-    global_vars.project_data = init(global_vars.project_path)
-    global_vars.prefer_path = global_vars.project_path 
+    init(project_path)
     print("Finish scanning project...")
-    print(query_name("ripng_clear_changed_flag"))
+    
     print("Start analyzing...")
     for section in sections:
         print("$$$$$$$ analysis new section:")
         # multiple file paths
-        matches = explore_multiple_paths(section, code_json, current_path=global_vars.prefer_path)
+        matches = explore_multiple_paths(section, code_json, current_path=prefer_path)
         
         function_text =""
         function_metadata = {}
@@ -358,11 +391,6 @@ def diff(protocol, read_file_name, write_file_name, repo_path):
                     code += fn_code.strip() + "\n"
             else:
                 print(f"⚠️ Function {fn} not found in metadata.")
+        
         agent_config(code, section)
-
-# Example usage of the diff function      
-protocol = 'ripngd'
-read_file_name = f"ripngd_{protocol}.txt"
-write_file_name = f"ripngd_{protocol}_cleaned.txt"
-repo_path = "/path/to/your/repo"  # Replace with your actual repo path
-diff(protocol,read_file_name, write_file_name,repo_path)
+        

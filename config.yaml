@@ -1,0 +1,17 @@
+project:
+  protocol: "protocol_name"                                    # Protocol name for reporting
+  project_path: "/path/to/your/project/"              # Root path of your project
+  prefer_path: "/path/to/your/project/src/"           # Source folder to analyze
+  rfc_input: "RFC/docs.txt"                           # Path to RFC documentation
+  rfc_cleaned_output: "RFC/cleaned_docs.txt"          # Cleaned RFC output location
+  summary_json: "summary/summary.json"                # Code summary output
+  log_or_not: false                                   # Enable/disable logging
+  log_file: "log.txt"                                 # Log file location
+
+llm_config:
+  model_name: "LLM model name"                        # LLM model name
+  OPENAI_API_KEY: "Your API Key"                      # OPENAI API Key
+  temperature: 0.0
+  retry_min: 5                                        # Minimum retry delay (seconds)
+  retry_max: 60                                       # Maximum retry delay (seconds)
+  max_retries: 30                                     # Maximum retry attempts

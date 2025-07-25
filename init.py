@@ -1,56 +1,62 @@
-import json
-from botocore.config import Config
+from openai import OpenAI
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_random_exponential,
+)
+import yaml
+import sys
+import time
 
-import boto3
-from botocore.exceptions import BotoCoreError, ClientError
-import asyncio
-
-# Create a session to access credentials
-session = boto3.Session()
-credentials = session.get_credentials()
-
-# Access the credentials
-current_credentials = credentials.get_frozen_credentials()
-
-class BedrockClient:
-    def __init__(self, region_name, config):
-        self.client = boto3.client(
-            "bedrock-runtime", region_name=region_name, config=config
-        )
-
-    def invoke_model(self, model_id, input_data, content_type="application/json"):
-        try:
-            response = self.client.invoke_model(
-                modelId=model_id, contentType=content_type, body=input_data
-            )
-            return response["body"].read().decode("utf-8")
-        except (BotoCoreError, ClientError) as error:
-            print("Error happened calling bedrock")
-            return {"error": str(error)}
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
 
-async def query(prompt):
-    config = Config(read_timeout=20)
+model_name = config["llm_config"]["model_name"]
+OPENAI_API_KEY = config["llm_config"]["OPENAI_API_KEY"]
+temperature = config["llm_config"]["temperature"]
+config_list = [
+    {
+        "model": model_name,
+        "api_key": OPENAI_API_KEY,
+        "temperature": temperature
+    }
+]
+retry_min = config["llm_config"]["retry_min"]
+retry_max = config["llm_config"]["retry_max"]
+max_retries = config["llm_config"]["max_retries"]
 
-    model_id = "your_model_id" # Todo: replace with your model ID  
-    br_client = BedrockClient("us-west-2", config)
-    body = json.dumps(
-        {
-            "messages": prompt,
-            "max_tokens": 1600,
-            "anthropic_version": "bedrock-2023-05-31",
-            "temperature": 0,
-            "top_k": 50,
-        }
+@retry(wait=wait_random_exponential(min=retry_min, max=retry_max), stop=stop_after_attempt(max_retries))
+def query(prompt):
+    client = OpenAI(api_key=OPENAI_API_KEY)
+    response = client.chat.completions.create(
+        model=model_name,
+        temperature=temperature,
+        messages=prompt,
     )
-    
-    br_response = br_client.invoke_model(model_id=model_id, input_data=body)
-    response = json.loads(br_response)  # Parse if it's a string
-    return response["content"][0]["text"]
+    return response.choices[0].message.content
+   
 
 def askLLM(prompt):
     test_prompt = [
         {"role": "user", "content": prompt},
     ]
-    response = asyncio.run(query(test_prompt))
+    response = query(test_prompt)
     return response
+
+# Project Configuration
+protocol = config["project"]["protocol"]
+log_file = config["project"]["log_file"]
+project_path = config["project"]["project_path"]
+prefer_path = config["project"]["prefer_path"]
+read_file_name = config["project"]["rfc_input"]
+write_file_name = config["project"]["rfc_cleaned_output"]
+summary_json = config["project"]["summary_json"]
+JSON_FILE = f"inconsistencies_{protocol}.json"
+
+if config["project"].get("log_or_not", False):
+    # Redirect stdout and stderr to log file
+    sys.stdout = open(log_file, 'w', encoding='utf-8')
+    sys.stderr = sys.stdout
+
+programming_language = config["project"].get("programming_language", "c")
