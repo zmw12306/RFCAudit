@@ -13,7 +13,7 @@ cd RFCAudit
 
 # Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -29,7 +29,7 @@ Create and configure `config.yaml` with your LLM API settings and project paths:
 
 ```yaml
 project:
-  protocol: "protocol_name"                                    # Protocol name for reporting
+  protocol: "protocol_name"                           # Protocol name
   project_path: "/path/to/your/project/"              # Root path of your project
   prefer_path: "/path/to/your/project/src/"           # Source folder to analyze
   rfc_input: "RFC/docs.txt"                           # Path to RFC documentation
@@ -94,9 +94,9 @@ This will:
 
 ```
 RFCAudit/
-├── README.md                 # This file
+├── README.md                # This file
 ├── config.yaml              # Configuration file
-├── requirements.txt          # Python dependencies
+├── requirements.txt         # Python dependencies
 ├── summarizer.py            # Code summarization tool
 ├── checker.py               # Inconsistency detection tool
 ├── RFC/                     # Example RFCs 
