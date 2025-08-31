@@ -134,8 +134,8 @@ Write a 1-2 sentence summary of this folder's purpose based on its contents.
     return folder_summary
 
 if __name__ == "__main__":
-    print(f"📂 Starting summarization for directory: {project_path}")
-    results = summarize_directory(project_path)
+    print(f"📂 Starting summarization for directory: {prefer_path}")
+    results = summarize_directory(prefer_path)
 
     # Optionally write to JSON for LLM input
     with open(summary_json, "w") as out:

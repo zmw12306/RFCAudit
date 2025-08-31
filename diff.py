@@ -189,7 +189,7 @@ def agent_config(function, docsec):
                     - Report only explicit violations of mandatory behavior.
                     - Do NOT report:
                         - Optional or undefined behavior
-                        - Valid implementation choices
+                        - Valid or intended implementation choices
                         - Logging vs silent handling differences
                     - Always account for call-site guarantees. If a precondition is satisfied before a call, the callee need not recheck it.
                 4. **Suggest Fixes for Identified Issues**:
