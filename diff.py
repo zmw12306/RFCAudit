@@ -8,12 +8,25 @@ import re
 import json
 
 def write_inconsistency(inconsistency_summary: str, proposed_fix: str):
+    """
+    Appends a new inconsistency record to the last entry in the global json_entries list.
+    Each entry is a dictionary containing a summary of the inconsistency and a proposed fix.
+    """
     global json_entries
     if not json_entries:
         print("⚠️ No entry to update!")
         return
-    json_entries[-1]["inconsistency summary"] = inconsistency_summary
-    json_entries[-1]["proposed fix"] = proposed_fix
+    
+    # Create a new inconsistency record
+    new_inconsistency = {
+        "summary": inconsistency_summary,
+        "proposed_fix": proposed_fix
+    }
+    
+    # Append the new record to the 'inconsistencies' list of the last entry
+    json_entries[-1]["inconsistencies"].append(new_inconsistency)
+    
+    # Write the updated list back to the JSON file
     with open(JSON_FILE, "w", encoding="utf-8") as f_json:
         json.dump(json_entries, f_json, indent=2)
 
@@ -164,8 +177,7 @@ def agent_config(function, docsec):
         "RFC chunk ID": docsec,
         "original context": function,
         "additional context": "",
-        "inconsistency summary": "",
-        "proposed fix": ""
+        "inconsistencies": []
     })
     # Write initial version of JSON after adding the entry
     with open(JSON_FILE, "w", encoding="utf-8") as f_json:
@@ -270,7 +282,7 @@ Ensure that only **true, explicitly documented** inconsistencies are documented 
     # Register the tool function with the user proxy agent.
     executor.register_for_execution(name="query_caller")(query_caller)
 
-    critic.register_for_llm(name="write_inconsistency", description="Write inconsistency to CSV")(write_inconsistency)
+    critic.register_for_llm(name="write_inconsistency", description="Append inconsistency to the JSON file")(write_inconsistency)
     executor.register_for_execution(name="write_inconsistency")(write_inconsistency)
     
     def state_transition(last_speaker, groupchat):
