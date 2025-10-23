@@ -105,5 +105,9 @@ RFCAudit/
 ├── summary/                 # Sample code analysis outputs
 ```
 
+## License
+
+This project is licensed under [Purdue license](LICENSE).
+
 
 
