@@ -5,13 +5,14 @@
 ## 🚀 Quick Start
 
 ### 1. Installation
+Prerequisites: Python 3.12
 
 ```bash
 # Clone the repository
 git clone xxx
 cd RFCAudit
 
-# Create and activate virtual environment
+# Create and activate a virtual environment
 python -m venv .venv
 source .venv/bin/activate
 
@@ -103,6 +104,12 @@ RFCAudit/
 ├── query_repo_recursive.py  # Tree-sitter based analysis tool
 ├── RFC/                     # Example RFCs 
 ├── summary/                 # Sample code analysis outputs
+```
+
+## Build RFCAudit using Docker (Ubuntu OS)
+```
+docker pull jiashengjiang/rfcaudit:latest
+docker run -it jiashengjiang/rfcaudit:latest /bin/bash
 ```
 
 ## License
