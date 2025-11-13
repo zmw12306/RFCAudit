@@ -156,7 +156,7 @@ def init(project_path):
 
     for root, dirs, files in os.walk(project_path):
         for file in files:
-            if not (file.endswith(".c") or file.endswith(".h")):
+            if not (file.endswith(".c") or file.endswith(".h") or file.endswith(".cpp") or file.endswith(".hpp")):
                 continue
 
             file_path = os.path.join(root, file)

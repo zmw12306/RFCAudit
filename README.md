@@ -32,6 +32,7 @@ project:
   protocol: "protocol_name"                           # Protocol name
   project_path: "/path/to/your/project/"              # Root path of your project
   prefer_path: "/path/to/your/project/src/"           # Source folder to analyze
+  programming_language: "c or cpp"                          # Programming language of the project: c or cpp
   rfc_input: "RFC/docs.txt"                           # Path to RFC documentation
   rfc_cleaned_output: "RFC/cleaned_docs.txt"          # Cleaned RFC output location
   summary_json: "summary/summary.json"                # Code summary output

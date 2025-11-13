@@ -17,8 +17,6 @@ Function:
         try:
             text = askLLM(prompt)
             return text
-            # if all(k in result for k in ("summary", "input", "output")):
-            #     return result
         except Exception as e:
             continue
 
@@ -106,7 +104,7 @@ def summarize_directory(directory: str, module_name=None) -> dict:
             all_file_summaries.append(f"{entry}/: {sub_summary['summary']}")
 
         # 📄 Source file
-        elif entry.endswith(".c") or entry.endswith(".h") or entry.endswith(".cpp"):
+        elif entry.endswith(".c") or entry.endswith(".h") or entry.endswith(".cpp") or entry.endswith(".hpp"):
             print(f"📄 Processing file: {entry}")
             with open(full_path, "rb") as f:
                 content = f.read()
